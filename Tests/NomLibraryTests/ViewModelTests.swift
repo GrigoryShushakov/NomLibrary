@@ -16,8 +16,13 @@ final class ViewModelTests: XCTestCase {
         let viewModel = FaceDetectionVM(callback: {_ in },
                                         captureService: captureService,
                                         permissionService: permissionService)
-        viewModel.configure()
         XCTAssert(viewModel.takeShot == false)
+        XCTAssert(viewModel.didClose.value == false)
+        XCTAssert(viewModel.isCenter.value == false)
+        XCTAssert(viewModel.eyesIsOpen.value == false)
+        XCTAssert(viewModel.notRolled.value == false)
+        XCTAssert(viewModel.notYawed.value == false)
+        XCTAssertTrue(viewModel.rightEyePoints.isEmpty && viewModel.leftEyePoints.isEmpty)
         XCTAssertNil(viewModel.haveFaceRect.value)
     }
 }

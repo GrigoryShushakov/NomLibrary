@@ -10,17 +10,16 @@ class CanvasView: UIView {
         faceRect = .zero
         
         DispatchQueue.main.async {
-          self.setNeedsDisplay()
+            self.setNeedsDisplay()
         }
     }
     
     override func draw(_ rect: CGRect) {
-        guard let context = UIGraphicsGetCurrentContext() else {
-          return
-        }
+        guard let context = UIGraphicsGetCurrentContext() else { return }
+        
         context.saveGState()
         defer {
-          context.restoreGState()
+            context.restoreGState()
         }
         
         var path = UIBezierPath()
@@ -35,15 +34,15 @@ class CanvasView: UIView {
         UIColor.red.setStroke()
         
         if !rightEye.isEmpty {
-          context.addLines(between: rightEye)
-          context.closePath()
-          context.strokePath()
+            context.addLines(between: rightEye)
+            context.closePath()
+            context.strokePath()
         }
         
         if !leftEye.isEmpty {
-          context.addLines(between: leftEye)
-          context.closePath()
-          context.strokePath()
+            context.addLines(between: leftEye)
+            context.closePath()
+            context.strokePath()
         }
     }
 }

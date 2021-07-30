@@ -3,7 +3,7 @@
 
 # NomLibrary
 
-**NomLibrary** is a Framework helped and suitable for take a selfie. The SDK calls the user interface for photography and returns the result of face detection. Also some additional functions available.
+**NomLibrary** is a Framework helped and suitable for take a selfie. The Framework calls the user interface for photography and returns the result of face detection. For proper taking selfie head should be centered 􀲏, eyes should be opened 􀦧, head don't rolled 􀯓 and yawed 􀪽.
 
 
 ## Need Help?
