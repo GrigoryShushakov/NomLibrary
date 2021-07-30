@@ -8,8 +8,14 @@ final class FaceDetectionVM: NSObject {
     let permissionService: CheckPermissionServiceProtocol
     var takeShot = false
     
-    // Vision requests for face detection
+    // Preview frame rect for transformations
+    var previewFrame = CGRect()
+    // Vision requests for face and landmarks detection
     private var requests = [VNRequest]()
+    
+    // Points for draw closed eyes, UIKit coordinates
+    var leftEyePoints: [CGPoint]? = [CGPoint]()
+    var rightEyePoints: [CGPoint]? = [CGPoint]()
     
     // Custom observables, for binding changes to ui layer
     let didClose: SimpleObservable<Bool> = SimpleObservable(false)
@@ -24,7 +30,8 @@ final class FaceDetectionVM: NSObject {
         self.permissionService = permissionService
     }
     
-    func configure() {
+    func configure(_ previewRect: CGRect) {
+        self.previewFrame = previewRect
         permissionService.checkPermissions { [weak self] result in
             guard let self = self else { return }
             
@@ -61,18 +68,50 @@ final class FaceDetectionVM: NSObject {
     }
     
     private func setupVision() {
-        let faceRequest = VNDetectFaceRectanglesRequest(completionHandler: self.faceDetectionHandler)
-        self.requests = [faceRequest]
+        let requests = VNDetectFaceLandmarksRequest(completionHandler: self.detectionHandler)
+        self.requests = [requests]
     }
     
-    private func faceDetectionHandler(request: VNRequest, error: Error?) {
+    private func detectionHandler(request: VNRequest, error: Error?) {
         guard let observations = request.results as? [VNFaceObservation] else { return }
         let result = observations.compactMap { $0 }
+        handleResult(result)
+    }
+    
+    private func handleResult(_ result: [VNFaceObservation]) {
         // Only one face accepted
         if result.isEmpty || result.count > 1 {
             haveFaceRect.value = nil
+            return
         } else {
-            haveFaceRect.value = result.first?.boundingBox
+            guard let faceRect = result.first?.boundingBox.transform(to: previewFrame) else { return }
+            
+            let rightEye = result.compactMap { $0.landmarks?.rightEye }
+            let rightPoints = rightEye.flatMap { $0.normalizedPoints }
+            guard let rightMinY = rightPoints.map({ $0.y }).min(),
+                  let rightMaxY = rightPoints.map({ $0.y }).max() else { return }
+            let rightEyeHeight = (rightMaxY - rightMinY) / rightMaxY
+            
+            // Just experimental value
+            if rightEyeHeight < 0.045 {
+                rightEyePoints = rightPoints.map { $0.transform(to: faceRect) }
+            } else {
+                rightEyePoints = nil
+            }
+            
+            let leftEye = result.compactMap { $0.landmarks?.leftEye }
+            let leftPoints = leftEye.flatMap { $0.normalizedPoints }
+            guard let leftMinY = leftPoints.map({ $0.y }).min(),
+                  let leftMaxY = leftPoints.map({ $0.y }).max() else { return }
+            let leftEyeHeight = (leftMaxY - leftMinY) / leftMaxY
+            
+            if leftEyeHeight < 0.045 {
+                leftEyePoints = leftPoints.map { $0.transform(to: faceRect) }
+            } else {
+                leftEyePoints = nil
+            }
+            
+            haveFaceRect.value = faceRect
         }
     }
 }

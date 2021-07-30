@@ -13,7 +13,7 @@ Please, use [GitHub Issues](https://github.com/GrigoryShushakov/nomlibrary/issue
 
 ## Examples
 
-[Sample App](https://github.com/GrigoryShushakov/client-app-nomlibrary)
+[Sample App](https://github.com/GrigoryShushakov/NomLibraryClient)
 
 
 ## Installation
@@ -22,7 +22,7 @@ NomLibrary can be installed with [Swift Package Manager](https://swift.org/packa
 ### Swift Package Manager (Xcode 12 or higher)
 
 1. In Xcode, open your project and navigate to **File** → **Swift Packages** → **Add Package Dependency...**
-2. Paste the repository URL (`https://github.com/GrigoryShushakov/nomlibrary.git`) and click **Next**.
+2. Paste the repository URL (`https://github.com/GrigoryShushakov/NomLibrary.git`) and click **Next**.
 3. For **Rules**, select **Version (Up to Next Major)** and click **Next**.
 4. Click **Finish**.
 
@@ -31,11 +31,11 @@ NomLibrary can be installed with [Swift Package Manager](https://swift.org/packa
 
 ## Usage
 
-1. For face detection please call `faceDetection` sdk method in your application.
+1. For face detection please call `takeSelfie` sdk method in your application.
 Method returns UIImage or Error with localized description.
 
 ```
-NomLibrary.shared.faceDetection() { result in
+NomLibrary.shared.takeSelfie() { result in
     switch result {
     case .success(let image):
         // Face detection image - UIImage

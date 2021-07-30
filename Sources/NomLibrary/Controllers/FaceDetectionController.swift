@@ -4,24 +4,34 @@ import AVFoundation
 class FaceDetectionController: BaseViewController<FaceDetectionVM> {
     
     private let faceDetectionServicesQueue = DispatchQueue(label: "NomLibrary.faceDetectionServicesQueue", qos: .userInitiated)
-    private var faceRectangle: OvalView?
+    private var previewLayer = AVCaptureVideoPreviewLayer()
+    private let canvasView = CanvasView()
     
     override func configure() {
         super.configure()
         buildUI()
         bindVM()
         setupPreviewLayer(viewModel.captureService.captureSession)
+        let rect = self.view.bounds
         faceDetectionServicesQueue.async {
-            self.viewModel.configure()
+            self.viewModel.configure(rect)
         }
     }
     
     private func buildUI(){
+        view.addSubview(canvasView)
         view.addSubview(putOnGlassesButton)
         view.addSubview(closeButton)
         view.addSubview(takeShotButton)
+        
+        canvasView.translatesAutoresizingMaskIntoConstraints = false
+        canvasView.backgroundColor = .clear
        
         NSLayoutConstraint.activate([
+            canvasView.topAnchor.constraint(equalTo: view.topAnchor),
+            canvasView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            canvasView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            canvasView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             putOnGlassesButton.widthAnchor.constraint(equalToConstant: Layout.buttonSize.width),
             putOnGlassesButton.heightAnchor.constraint(equalToConstant: Layout.buttonSize.height),
             putOnGlassesButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Layout.offset),
@@ -50,21 +60,31 @@ class FaceDetectionController: BaseViewController<FaceDetectionVM> {
         viewModel.haveFaceRect.bind { [weak self] rect in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                self.takeShotButton.isEnabled = rect != nil
-                if self.faceRectangle != nil { self.faceRectangle?.removeFromSuperview() }
+                defer {
+                  DispatchQueue.main.async {
+                    self.canvasView.setNeedsDisplay()
+                  }
+                }
+                self.canvasView.clear()
                 guard rect != nil else { return }
-                let uikitRect = rect!.transform(to: self.view.frame)
-                self.faceRectangle = OvalView(frame: uikitRect)
-                self.view.addSubview(self.faceRectangle!)
+                self.canvasView.faceRect = rect!
+                let isCenter = rect!.isCenterPosition(in: self.previewLayer.frame, with: 0.2)
+                self.canvasView.faceColor = isCenter ? UIColor.green : UIColor.red
+                let rightEyePoints = self.viewModel.rightEyePoints ?? []
+                let leftEyePoints = self.viewModel.leftEyePoints ?? []
+                self.canvasView.rightEye = rightEyePoints
+                self.canvasView.leftEye = leftEyePoints
+                self.takeShotButton.isEnabled = isCenter && rightEyePoints.isEmpty && rightEyePoints.isEmpty
             }
         }
     }
     
     private func setupPreviewLayer(_ session: AVCaptureSession) {
         // Insert preview layer
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.videoGravity = .resize
+        previewLayer.frame = view.bounds
         view.layer.insertSublayer(previewLayer, at: 0)
-        previewLayer.frame = view.layer.frame
     }
     
     @objc private func close() {
